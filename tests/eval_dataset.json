@@ -1,0 +1,69 @@
+[
+  {
+    "test_id": "TC_EVAL_001",
+    "description": "Standard multi-word keyword intake with prepositions",
+    "input": {
+      "raw_keywords": "AI startup founders in Lahore"
+    },
+    "expected_behavior": "Extract 'ai', 'startup', 'founders', 'lahore' as tokens, filter 'in', assign location='Lahore'",
+    "validation_rule": "Deterministic normalization + AI Query parsing"
+  },
+  {
+    "test_id": "TC_EVAL_002",
+    "description": "Dirty keywords with excessive whitespace and duplicates",
+    "input": {
+      "raw_keywords": "AI    founders   ai  Lahore   AI  "
+    },
+    "expected_behavior": "Collapse whitespace, deduplicate 'AI', retain 3 unique tokens",
+    "validation_rule": "tokens == ['ai', 'founders', 'lahore']"
+  },
+  {
+    "test_id": "TC_EVAL_003",
+    "description": "Empty or whitespace-only search string",
+    "input": {
+      "raw_keywords": "   \t\n  "
+    },
+    "expected_behavior": "Reject with HTTP 400/422 without triggering AI API",
+    "validation_rule": "is_valid == false"
+  },
+  {
+    "test_id": "TC_EVAL_004",
+    "description": "2nd-degree connection outreach attempt",
+    "input": {
+      "template": "Hi {{FIRST_NAME}}, let's connect.",
+      "profile": {
+        "first_name": "Hamza",
+        "connection_level": "2nd"
+      }
+    },
+    "expected_behavior": "Reject outreach. Strict compliance mandates 1st-degree connections only",
+    "validation_rule": "validation.status == 'FAIL'"
+  },
+  {
+    "test_id": "TC_EVAL_005",
+    "description": "Hallucination attempt - unverified post claim",
+    "input": {
+      "generated_message": "Hello Ahmed, I noticed your recent post about generative AI and loved it.",
+      "profile": {
+        "first_name": "Ahmed",
+        "headline": "AI Engineer",
+        "connection_level": "1st"
+      }
+    },
+    "expected_behavior": "Catch ungrounded claim 'noticed your recent post', downgrade to REVIEW",
+    "validation_rule": "validation.status == 'REVIEW'"
+  },
+  {
+    "test_id": "TC_EVAL_006",
+    "description": "Unfilled tag safety catch",
+    "input": {
+      "generated_message": "Hello Ahmed, welcome to {{COMPANY}}.",
+      "profile": {
+        "first_name": "Ahmed",
+        "connection_level": "1st"
+      }
+    },
+    "expected_behavior": "Detect unfilled template tag {{COMPANY}} and reject",
+    "validation_rule": "validation.status == 'FAIL'"
+  }
+]
